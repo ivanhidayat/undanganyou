@@ -250,7 +250,6 @@ function App() {
             <div className="hero-actions"><button className="primary-button" onClick={() => selectTab('event')}>▶ Lihat Acara</button><button className="icon-button" onClick={() => selectTab('story')}>＋<small>Detail</small></button></div>
           </div>
         </section>
-        <section className="content-section"><div className="section-heading"><h2>Melanjutkan cerita</h2><span>100%</span></div><div className="continue-card"><div className="mini-poster" /><div><strong>Episode 01: Hari Pertama</strong><p>“Our forever starts here”</p><div className="progress"><i /></div></div><b className="play-small">▶</b></div></section>
         <section className="content-section"><h2>Profile Pengantin</h2><div className="profile-grid"><div><div className="avatar fani" /><b>Fani Setiawan, S.Pd</b><span>Putra Bapak Turyanto dan Ibu Naisah</span></div><div><div className="avatar ella" /><b>Ella Afiani, S.M</b><span>Putri Bapak Dirwan dan Ibu Sukarni</span></div></div></section>
       </>}
 
