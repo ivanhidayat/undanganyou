@@ -72,6 +72,21 @@ function App() {
   }, [verseVisible, tab, galleryUnlocked])
 
   useEffect(() => {
+    if (tab !== 'story' || storyStage > 0) return
+    const playButton = document.querySelector('.reel-play')
+    const shell = document.querySelector('.app-shell')
+    if (!playButton || !shell) return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        playStory()
+        observer.disconnect()
+      }
+    }, { root: shell, threshold: 0.55 })
+    observer.observe(playButton)
+    return () => observer.disconnect()
+  }, [tab, storyStage])
+
+  useEffect(() => {
     const track = galleryTrackRef.current
     if (!track) return
     const onScroll = () => {
