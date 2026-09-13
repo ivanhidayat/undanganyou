@@ -54,9 +54,16 @@ function App() {
   const galleryTrackRef = useRef<HTMLDivElement>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
   const episodeRefs = useRef<Record<string, HTMLElement | null>>({})
-  const pathGuestName = decodeURIComponent(window.location.pathname.split('/').filter(Boolean)[0] || '')
-  const queryGuestName = new URLSearchParams(window.location.search).get('to') || ''
-  const guestName = queryGuestName || pathGuestName || 'Tamu Undangan'
+  const rawPathGuestName = window.location.pathname.split('/').filter(Boolean)[0] || ''
+  const rawQueryGuestName = new URLSearchParams(window.location.search).get('to') || ''
+  const formatGuestName = (value: string) => {
+    try {
+      return decodeURIComponent(value.replace(/\+/g, ' ')).replace(/[-_]+/g, ' ').trim() || 'Tamu Undangan'
+    } catch {
+      return value.trim() || 'Tamu Undangan'
+    }
+  }
+  const guestName = formatGuestName(rawQueryGuestName || rawPathGuestName)
 
   useEffect(() => {
     const verse = document.querySelector('.verse-card')
