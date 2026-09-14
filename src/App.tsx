@@ -29,6 +29,7 @@ const photos = [
   { src: '/gallery/photo-02.jpg', label: 'Our promise', alt: 'Placeholder foto Our promise' },
   { src: '/gallery/photo-03.jpg', label: 'Forever', alt: 'Placeholder foto Forever' },
   { src: '/gallery/photo-04.jpg', label: 'The day', alt: 'Placeholder foto The day' },
+  { src: '/gallery/photo-05.jpg', label: 'Our next chapter', alt: 'Foto Fani dan Ella' },
 ]
 const loveEmojis = ['💍', '💖', '🥰', '💐', '😂']
 
