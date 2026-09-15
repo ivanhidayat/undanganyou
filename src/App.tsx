@@ -258,7 +258,7 @@ function App() {
           <div className="hero-copy">
             <span className="eyebrow">WEDDINGFLIX ORIGINAL</span>
             <h1>Fani <small>and</small> Ella</h1>
-            <p className="meta"><b>2026</b><b className="rating">SU</b><span>Senin - Selasa</span><span>05 - 06 Oktober 2026</span><span>Akad: 07 Oktober 2026 · 07.00 WIB</span></p>
+            <p className="meta"><b className="rating">SU</b></p>
             <p className="description">Dua hati, satu janji, dan selamanya untuk dijalani bersama.</p>
             <div className="hero-actions"><button className="primary-button" onClick={() => selectTab('event')}>▶ Lihat Acara</button><button className="icon-button" onClick={() => selectTab('story')}>＋<small>Detail</small></button></div>
           </div>
