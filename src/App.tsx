@@ -58,7 +58,6 @@ function App() {
   const [floatingEmojis, setFloatingEmojis] = useState<{ id: number; emoji: string; left: number; top: number; rotate: number }[]>([])
   const galleryTrackRef = useRef<HTMLDivElement>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
-  const episodeRefs = useRef<Record<string, HTMLElement | null>>({})
   const rawPathGuestName = window.location.pathname.split('/').filter(Boolean)[0] || ''
   const rawQueryGuestName = new URLSearchParams(window.location.search).get('to') || ''
   const formatGuestName = (value: string) => {
@@ -84,25 +83,55 @@ function App() {
   }, [verseVisible, tab, galleryUnlocked])
 
   useEffect(() => {
-    if (openEpisode !== 'ep03' || portraitVisible) return
-    const timer = window.setTimeout(() => setPortraitVisible(true), 500)
-    return () => window.clearTimeout(timer)
-  }, [openEpisode, portraitVisible])
+    if (tab !== 'story' || !galleryUnlocked) return
+    setEpisodesUnlocked(true)
+    setStoryStage(0)
+    setOpenEpisode(null)
+    setOpenEpisodes([])
+    const shell = document.querySelector('.app-shell')
+    const reel = document.querySelector('.story-reel')
+    if (!shell || !reel) return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setStoryStage(3)
+        observer.disconnect()
+      }
+    }, { root: shell, threshold: 0.12 })
+    observer.observe(reel)
+    return () => observer.disconnect()
+  }, [tab, galleryUnlocked])
 
   useEffect(() => {
     if (tab !== 'story' || !galleryUnlocked) return
-    setEpisodesUnlocked(true)
-    setStoryStage(1)
-    setOpenEpisode(null)
-    setOpenEpisodes([])
-    const reveal = (id: string) => { setOpenEpisodes((current) => [...current, id]); setOpenEpisode(id) }
-    const timers = [
-      window.setTimeout(() => { setStoryStage(2); reveal('ep01') }, 700),
-      window.setTimeout(() => reveal('ep02'), 1450),
-      window.setTimeout(() => reveal('ep03'), 2200),
-    ]
-    return () => timers.forEach((timer) => window.clearTimeout(timer))
-  }, [tab, galleryUnlocked])
+    const shell = document.querySelector('.app-shell')
+    const items = Array.from(document.querySelectorAll('.reel-item'))
+    if (!shell || !items.length) return
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return
+        const id = (entry.target as HTMLElement).dataset.episode
+        if (id) setOpenEpisodes((current) => current.includes(id) ? current : [...current, id])
+        observer.unobserve(entry.target)
+      })
+    }, { root: shell, threshold: 0.18, rootMargin: '0px 0px -8% 0px' })
+    items.forEach((item) => observer.observe(item))
+    return () => observer.disconnect()
+  }, [tab, galleryUnlocked, storyStage])
+
+  useEffect(() => {
+    if (tab !== 'story' || !galleryUnlocked || portraitVisible) return
+    const shell = document.querySelector('.app-shell')
+    const portrait = document.querySelector('.portrait-gallery')
+    if (!shell || !portrait) return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setPortraitVisible(true)
+        observer.disconnect()
+      }
+    }, { root: shell, threshold: 0.15 })
+    observer.observe(portrait)
+    return () => observer.disconnect()
+  }, [tab, galleryUnlocked, portraitVisible])
 
   useEffect(() => {
     const track = galleryTrackRef.current
@@ -273,7 +302,7 @@ function App() {
             <button className="reel-title" onClick={playStory}>Awal Kisah</button>
             <p className="reel-intro">Tidak ada yang kebetulan di dunia ini. Semua sudah tersusun sangat rapi, oleh Allah SWT. Kita tidak bisa memilih kepada siapa kita akan berjodoh. Di antara milyaran ketidakmungkinan, semesta memilih untuk mempertemukan kami dalam suatu waktu yang tak terduga. Kami bertemu pertama kalinya pada tahun 2019.</p>
             <div className="reel-tabs">{episodes.map((episode, index) => <button key={episode.id} className={openEpisode === episode.id ? 'active' : ''} style={{ animationDelay: `${index * 220}ms` }} onClick={() => toggleEpisode(episode.id)}>{episode.tag}</button>)}</div>
-            <div className="reel-list">{episodes.map((episode) => <article key={episode.id} ref={(node) => { episodeRefs.current[episode.id] = node }} className={`reel-item ${openEpisodes.includes(episode.id) ? 'open' : ''}`}><div className="reel-inner" key={openEpisodes.includes(episode.id) ? `${episode.id}-on` : `${episode.id}-off`}><div className="reel-frame"><img src={episode.image} alt={`Placeholder ${episode.title}`} /></div><div className="reel-copy"><h3>{episode.title}</h3><p>{episode.text}</p></div></div></article>)}</div>
+            <div className="reel-list">{episodes.map((episode) => <article key={episode.id} data-episode={episode.id} className={`reel-item ${openEpisodes.includes(episode.id) ? 'open' : ''}`}><div className="reel-inner" key={openEpisodes.includes(episode.id) ? `${episode.id}-on` : `${episode.id}-off`}><div className="reel-frame"><img src={episode.image} alt={`Placeholder ${episode.title}`} /></div><div className="reel-copy"><h3>{episode.title}</h3><p>{episode.text}</p></div></div></article>)}</div>
           </div>
         </section><section className={`portrait-gallery ${portraitVisible ? 'is-visible' : ''}`}><h2>Our Moments</h2><div className="portrait-gallery-track">{photos.slice(0, 4).map((_, index) => <button className={`portrait-gallery-card ${activePortrait === index ? 'is-active' : ''}`} key={`portrait-${index}`} type="button" onClick={() => { setActivePortrait(index); window.setTimeout(() => setActivePortrait(null), 650) }}><img src={`/gallery/portrait-0${index + 1}.svg`} alt={`Placeholder portrait ${index + 1}`} /></button>)}</div><button className="primary-button portrait-event-button" type="button" onClick={() => selectTab('event')}>▣ Lihat Acara</button></section></div></section>}
       {tab === 'event' && <section className="page-content"><span className="eyebrow">COMING SOON</span><h1>Save the <em>Date</em></h1><div className="countdown">{Object.entries(timeLeft).map(([label, value]) => <div key={label}><strong>{String(value).padStart(2, '0')}</strong><span>{label}</span></div>)}</div><div className="event-card"><span>EPISODE 01 · THE CEREMONY</span><h2>Acara & Akad</h2><p>Acara<br />Senin - Selasa, 05 - 06 Oktober 2026<br /><br />Akad<br />Rabu, 07 Oktober 2026<br />07.00 WIB – selesai<br />Kediaman Mempelai Wanita<br />Pancurendang RT 04 RW 07 Ajibarang Banyumas</p><button className="primary-button" type="button" onClick={addToCalendar}>＋ Tambah ke Kalender</button></div><div className="family-locations"><span className="eyebrow">ALAMAT KELUARGA</span><h2>Kediaman Mempelai</h2>{familyLocations.map((location) => <div className="family-location-wrap" key={location.id}><button className={`family-location ${selectedFamilyLocation === location.id ? 'selected' : ''}`} type="button" onClick={() => setSelectedFamilyLocation(selectedFamilyLocation === location.id ? null : location.id)}><span>{location.title}</span><b>{selectedFamilyLocation === location.id ? '⌃' : '⌄'}</b></button>{selectedFamilyLocation === location.id && <div className="family-map-card"><div className="family-map-preview"><iframe title={`Peta ${location.title}`} src={location.embedUrl} loading="lazy" referrerPolicy="no-referrer-when-downgrade" /></div><a className="primary-button family-map-button" href={location.url} target="_blank" rel="noreferrer">↗ Buka Alamat di Google Maps</a></div>}</div>)}</div></section>}
