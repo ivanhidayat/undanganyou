@@ -85,7 +85,7 @@ function App() {
 
   useEffect(() => {
     if (openEpisode !== 'ep03' || portraitVisible) return
-    const timer = window.setTimeout(() => setPortraitVisible(true), 1500)
+    const timer = window.setTimeout(() => setPortraitVisible(true), 500)
     return () => window.clearTimeout(timer)
   }, [openEpisode, portraitVisible])
 
