@@ -12,17 +12,16 @@
 .reel-list{display:grid;gap:0}
 
 /* Grid 0fr -> 1fr measures real content height, so the reveal lands exactly. */
-.reel-item{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .62s cubic-bezier(.22,1,.36,1),opacity .38s ease,margin .5s cubic-bezier(.22,1,.36,1);margin:0}
-.reel-item.open{grid-template-rows:1fr;opacity:1;margin:4px 0 20px}
+.reel-item{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows 1.15s cubic-bezier(.16,1,.3,1),opacity .85s ease,margin .95s cubic-bezier(.16,1,.3,1);margin:0}.reel-item.open{grid-template-rows:1fr;opacity:1;margin:8px 0 28px}
 .reel-inner{overflow:hidden;min-height:0;display:grid;grid-template-columns:132px 1fr;gap:16px;align-items:start}
 
 .reel-frame{height:112px;border-radius:8px;overflow:hidden;background:#333;opacity:0;transform:translateX(-38px)}.reel-frame img{display:block;width:100%;height:100%;object-fit:cover}
 .reel-copy h3{margin:0 0 8px;font-size:17px;line-height:1.3;color:#fff;opacity:0;transform:translateX(-30px)}
 .reel-copy p{margin:0;font-size:13px;line-height:1.75;color:#c4c4c4;opacity:0;transform:translateY(14px)}
 
-.reel-item.open .reel-frame{animation:reel-slide .72s cubic-bezier(.22,1,.36,1) .14s both}
-.reel-item.open .reel-copy h3{animation:reel-slide .68s cubic-bezier(.22,1,.36,1) .3s both}
-.reel-item.open .reel-copy p{animation:reel-rise .7s cubic-bezier(.22,1,.36,1) .48s both}
+.reel-item.open .reel-frame{animation:reel-slide 1.15s cubic-bezier(.16,1,.3,1) .18s both}
+.reel-item.open .reel-copy h3{animation:reel-slide 1.05s cubic-bezier(.16,1,.3,1) .36s both}
+.reel-item.open .reel-copy p{animation:reel-rise 1.1s cubic-bezier(.16,1,.3,1) .56s both}
 
 .story-reel.stage-1 .reel-title,.story-reel.stage-2 .reel-title,.story-reel.stage-3 .reel-title{pointer-events:auto;animation:reel-pop 1s cubic-bezier(.22,1,.36,1) forwards}
 .story-reel.stage-2 .reel-intro,.story-reel.stage-3 .reel-intro{animation:reel-rise 1.35s cubic-bezier(.22,1,.36,1) forwards}

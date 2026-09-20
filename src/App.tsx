@@ -97,9 +97,9 @@ function App() {
     setOpenEpisodes([])
     const reveal = (id: string) => { setOpenEpisodes((current) => [...current, id]); setOpenEpisode(id) }
     const timers = [
-      window.setTimeout(() => { setStoryStage(2); reveal('ep01') }, 900),
-      window.setTimeout(() => reveal('ep02'), 2200),
-      window.setTimeout(() => reveal('ep03'), 3500),
+      window.setTimeout(() => { setStoryStage(2); reveal('ep01') }, 1400),
+      window.setTimeout(() => reveal('ep02'), 3900),
+      window.setTimeout(() => reveal('ep03'), 6400),
     ]
     return () => timers.forEach((timer) => window.clearTimeout(timer))
   }, [tab, galleryUnlocked])
