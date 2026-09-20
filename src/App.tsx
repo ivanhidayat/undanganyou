@@ -52,6 +52,7 @@ function App() {
   const [wishes, setWishes] = useState<{ id: number; name: string; attendance: string; message: string; created_at: string }[]>([])
   const [storyStage, setStoryStage] = useState(0)
   const [openEpisode, setOpenEpisode] = useState<string | null>(null)
+  const [openEpisodes, setOpenEpisodes] = useState<string[]>([])
   const [episodesUnlocked, setEpisodesUnlocked] = useState(false)
   const [emojiPop, setEmojiPop] = useState<string | null>(null)
   const [floatingEmojis, setFloatingEmojis] = useState<{ id: number; emoji: string; left: number; top: number; rotate: number }[]>([])
@@ -89,19 +90,19 @@ function App() {
   }, [openEpisode, portraitVisible])
 
   useEffect(() => {
-    if (tab !== 'story' || storyStage > 0) return
-    const playButton = document.querySelector('.reel-play')
-    const shell = document.querySelector('.app-shell')
-    if (!playButton || !shell) return
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        playStory()
-        observer.disconnect()
-      }
-    }, { root: shell, threshold: 0.55 })
-    observer.observe(playButton)
-    return () => observer.disconnect()
-  }, [tab, storyStage])
+    if (tab !== 'story' || !galleryUnlocked) return
+    setEpisodesUnlocked(true)
+    setStoryStage(1)
+    setOpenEpisode(null)
+    setOpenEpisodes([])
+    const reveal = (id: string) => { setOpenEpisodes((current) => [...current, id]); setOpenEpisode(id) }
+    const timers = [
+      window.setTimeout(() => { setStoryStage(2); reveal('ep01') }, 900),
+      window.setTimeout(() => reveal('ep02'), 2200),
+      window.setTimeout(() => reveal('ep03'), 3500),
+    ]
+    return () => timers.forEach((timer) => window.clearTimeout(timer))
+  }, [tab, galleryUnlocked])
 
   useEffect(() => {
     const track = galleryTrackRef.current
@@ -269,11 +270,10 @@ function App() {
       {tab === 'story' && <section className={`page-content gallery-page ${galleryUnlocked ? 'is-unlocked' : ''}`}>{!galleryUnlocked && <div className={`flower-gate ${flowerLeaving ? 'leaving' : ''}`}><span className="eyebrow">A LITTLE SURPRISE</span><h1>Geser bunganya</h1><p className="lead">Buka halaman kenangan kami dengan mengangkat bunga ke kanan.</p><div className="flower-stage"><div className="flower-glow" /><div className="flower-rail"><div className="flower-fill" style={{ width: `${flowerProgress}%` }} /></div><div className="flower-handle" style={{ transform: `translateX(${flowerProgress * 2.1}px) scale(${0.88 + flowerProgress / 833})` }} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); const startX = event.clientX; const startProgress = flowerProgress; const move = (moveEvent: PointerEvent) => { const nextProgress = Math.min(100, Math.max(0, startProgress + ((moveEvent.clientX - startX) / 230) * 100)); setFlowerProgress(nextProgress); if (nextProgress >= 92) { setFlowerProgress(100); setFlowerLeaving(true); window.setTimeout(() => setGalleryUnlocked(true), 650) } }; const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up) }; window.addEventListener('pointermove', move); window.addEventListener('pointerup', up) }}><img src="/flower-bouquet.png.png" alt="Buket bunga" /></div></div><p className="glass-hint">Geser bunga ke kanan untuk membuka galeri <b>→</b></p></div>}<div className="gallery-reveal"><span className="eyebrow">OUR MEMORIES</span><h1>Gallery of <em>Love</em></h1><p className="lead">Potongan kecil dari perjalanan Fani dan Ella menuju hari istimewa.</p><div className="gallery-stage" style={{ backgroundImage: `url(${photos[activePhoto].src})` }}><div className="gallery-track" ref={galleryTrackRef}>{photos.slice(0, 2).map((photo, index) => <button className={`gallery-card ${index === activePhoto ? 'selected' : ''}`} key={photo.src} onClick={() => selectPhoto(index)}><img src={photo.src} alt={photo.alt} /><span>{photo.label}</span></button>)}</div><button className="gallery-arrow previous" onClick={() => selectPhoto((activePhoto - 1 + photos.length) % photos.length)} aria-label="Foto sebelumnya">‹</button><button className="gallery-arrow next" onClick={() => selectPhoto((activePhoto + 1) % photos.length)} aria-label="Foto berikutnya">›</button><div className="gallery-dots">{photos.map((photo, index) => <button key={photo.label} className={index === activePhoto ? 'active' : ''} onClick={() => selectPhoto(index)} aria-label={`Buka ${photo.label}`} />)}</div></div><div className="quote">“Every picture tells our favorite story.”</div><section className={`verse-card ${verseVisible ? 'verse-visible' : ''}`}><span className="eyebrow">A VERSE FOR OUR JOURNEY</span><h2>Ar-Rum · 21</h2><p className="arabic" dir="rtl">وَمِنْ ءَايَٰتِهِۦٓ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَٰجًا لِّتَسْكُنُوٓا۟ إِلَيْهَا وَجَعَلَ بَيْنَكُم مَّوَدَّةً وَرَحْمَةً ۚ إِنَّ فِى ذَٰلِكَ لَءَايَٰتٍ لِّقَوْمٍ يَتَفَكَّرُونَ</p><p className="latin">Wa min āyātihī an khalaqa lakum min anfusikum azwājal litaskunū ilaihā wa ja'ala bainakum mawaddataw wa rahmah, inna fī zālika la'āyātil liqaumiy yatafakkarūn.</p><p className="translation">“Dan di antara tanda-tanda (kebesaran)-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan Dia menjadikan di antaramu rasa kasih dan sayang. Sungguh, pada yang demikian itu benar-benar terdapat tanda-tanda (kebesaran Allah) bagi kaum yang berpikir.”</p></section>
         <section className={`story-reel stage-${storyStage} ${episodesUnlocked ? 'episodes-unlocked' : 'episodes-locked'}`}>
           <div className="reel-screen">
-            {!episodesUnlocked && <button className="episodes-lock" type="button" onClick={() => setEpisodesUnlocked(true)}><span className="episodes-lock-icon">▶</span><strong>Klik untuk melihat</strong><small>episode perjalanan kami bertemu</small></button>}
             <button className="reel-title" onClick={playStory}>Awal Kisah</button>
             <p className="reel-intro">Tidak ada yang kebetulan di dunia ini. Semua sudah tersusun sangat rapi, oleh Allah SWT. Kita tidak bisa memilih kepada siapa kita akan berjodoh. Di antara milyaran ketidakmungkinan, semesta memilih untuk mempertemukan kami dalam suatu waktu yang tak terduga. Kami bertemu pertama kalinya pada tahun 2019.</p>
             <div className="reel-tabs">{episodes.map((episode, index) => <button key={episode.id} className={openEpisode === episode.id ? 'active' : ''} style={{ animationDelay: `${index * 220}ms` }} onClick={() => toggleEpisode(episode.id)}>{episode.tag}</button>)}</div>
-            <div className="reel-list">{episodes.map((episode) => <article key={episode.id} ref={(node) => { episodeRefs.current[episode.id] = node }} className={`reel-item ${openEpisode === episode.id ? 'open' : ''}`}><div className="reel-inner" key={openEpisode === episode.id ? `${episode.id}-on` : `${episode.id}-off`}><div className="reel-frame"><img src={episode.image} alt={`Placeholder ${episode.title}`} /></div><div className="reel-copy"><h3>{episode.title}</h3><p>{episode.text}</p></div></div></article>)}</div>
+            <div className="reel-list">{episodes.map((episode) => <article key={episode.id} ref={(node) => { episodeRefs.current[episode.id] = node }} className={`reel-item ${openEpisodes.includes(episode.id) ? 'open' : ''}`}><div className="reel-inner" key={openEpisodes.includes(episode.id) ? `${episode.id}-on` : `${episode.id}-off`}><div className="reel-frame"><img src={episode.image} alt={`Placeholder ${episode.title}`} /></div><div className="reel-copy"><h3>{episode.title}</h3><p>{episode.text}</p></div></div></article>)}</div>
           </div>
         </section><section className={`portrait-gallery ${portraitVisible ? 'is-visible' : ''}`}><h2>Our Moments</h2><div className="portrait-gallery-track">{photos.slice(0, 4).map((_, index) => <button className={`portrait-gallery-card ${activePortrait === index ? 'is-active' : ''}`} key={`portrait-${index}`} type="button" onClick={() => { setActivePortrait(index); window.setTimeout(() => setActivePortrait(null), 650) }}><img src={`/gallery/portrait-0${index + 1}.svg`} alt={`Placeholder portrait ${index + 1}`} /></button>)}</div><button className="primary-button portrait-event-button" type="button" onClick={() => selectTab('event')}>▣ Lihat Acara</button></section></div></section>}
       {tab === 'event' && <section className="page-content"><span className="eyebrow">COMING SOON</span><h1>Save the <em>Date</em></h1><div className="countdown">{Object.entries(timeLeft).map(([label, value]) => <div key={label}><strong>{String(value).padStart(2, '0')}</strong><span>{label}</span></div>)}</div><div className="event-card"><span>EPISODE 01 · THE CEREMONY</span><h2>Acara & Akad</h2><p>Acara<br />Senin - Selasa, 05 - 06 Oktober 2026<br /><br />Akad<br />Rabu, 07 Oktober 2026<br />07.00 WIB – selesai<br />Kediaman Mempelai Wanita<br />Pancurendang RT 04 RW 07 Ajibarang Banyumas</p><button className="primary-button" type="button" onClick={addToCalendar}>＋ Tambah ke Kalender</button></div><div className="family-locations"><span className="eyebrow">ALAMAT KELUARGA</span><h2>Kediaman Mempelai</h2>{familyLocations.map((location) => <div className="family-location-wrap" key={location.id}><button className={`family-location ${selectedFamilyLocation === location.id ? 'selected' : ''}`} type="button" onClick={() => setSelectedFamilyLocation(selectedFamilyLocation === location.id ? null : location.id)}><span>{location.title}</span><b>{selectedFamilyLocation === location.id ? '⌃' : '⌄'}</b></button>{selectedFamilyLocation === location.id && <div className="family-map-card"><div className="family-map-preview"><iframe title={`Peta ${location.title}`} src={location.embedUrl} loading="lazy" referrerPolicy="no-referrer-when-downgrade" /></div><a className="primary-button family-map-button" href={location.url} target="_blank" rel="noreferrer">↗ Buka Alamat di Google Maps</a></div>}</div>)}</div></section>}
