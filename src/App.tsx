@@ -121,7 +121,7 @@ function App() {
   }, [tab, galleryUnlocked, storyStage])
 
   useEffect(() => {
-    if (tab !== 'story' || !galleryUnlocked || portraitVisible) return
+    if (tab !== 'story' || !galleryUnlocked || portraitVisible || !openEpisodes.includes('ep03')) return
     const shell = document.querySelector('.app-shell')
     const portrait = document.querySelector('.portrait-gallery')
     if (!shell || !portrait) return
@@ -133,7 +133,7 @@ function App() {
     }, { root: shell, threshold: 0.15 })
     observer.observe(portrait)
     return () => observer.disconnect()
-  }, [tab, galleryUnlocked, portraitVisible])
+  }, [tab, galleryUnlocked, portraitVisible, openEpisodes])
 
   useEffect(() => {
     const track = galleryTrackRef.current
