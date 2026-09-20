@@ -109,9 +109,11 @@ function App() {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return
-        const id = (entry.target as HTMLElement).dataset.episode
-        if (id) setOpenEpisodes((current) => current.includes(id) ? current : [...current, id])
-        observer.unobserve(entry.target)
+        const target = entry.target as HTMLElement
+        const id = target.dataset.episode
+        const index = items.indexOf(target)
+        if (id) window.setTimeout(() => setOpenEpisodes((current) => current.includes(id) ? current : [...current, id]), index * 500)
+        observer.unobserve(target)
       })
     }, { root: shell, threshold: 0.18, rootMargin: '0px 0px -8% 0px' })
     items.forEach((item) => observer.observe(item))
