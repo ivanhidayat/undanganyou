@@ -277,12 +277,12 @@ function App() {
     nextImage.src = next.src
     nextCaption.textContent = next.label
     gsap.set(nextImage, { x: 60 * direction, scale: 1.06, opacity: 0 })
-    gsap.set(nextCaption, { x: 30, opacity: 0 })
-    const timeline = gsap.timeline({ onComplete: () => { setActivePhoto(index); requestAnimationFrame(() => { gsap.set(image, { x: 0, scale: 1, opacity: 1 }); gsap.set(nextImage, { x: 60 * direction, scale: 1.06, opacity: 0 }); gsap.set(caption, { x: 0, opacity: 1 }); gsap.set(nextCaption, { x: 30, opacity: 0 }); galleryAnimatingRef.current = false }) } })
+    gsap.set(nextCaption, { x: 0, opacity: 0 })
+    const timeline = gsap.timeline({ onComplete: () => { setActivePhoto(index); requestAnimationFrame(() => { gsap.set(image, { x: 0, scale: 1, opacity: 1 }); gsap.set(nextImage, { x: 60 * direction, scale: 1.06, opacity: 0 }); gsap.set(caption, { x: 0, opacity: 1 }); gsap.set(nextCaption, { x: 0, opacity: 0 }); galleryAnimatingRef.current = false }) } })
     timeline.to(caption, { x: -60 * direction, opacity: 0, duration: .7, ease: 'power3.inOut' })
       .to(image, { x: -60 * direction, scale: .96, opacity: 0, duration: .7, ease: 'power3.inOut' }, '<')
       .fromTo(nextImage, { x: 60 * direction, scale: 1.06, opacity: 0 }, { x: 0, scale: 1, opacity: 1, duration: .9, ease: 'power3.out' }, '-=.35')
-      .to(nextCaption, { x: 0, opacity: 1, duration: .65, ease: 'power3.out' }, '-=.65')
+      .to(nextCaption, { opacity: 1, duration: .65, ease: 'power3.out' }, '-=.65')
       .to(background, { opacity: .22, duration: .45, ease: 'power2.out' }, 0)
       .set(background, { backgroundImage: `url(${next.src})` })
       .to(background, { opacity: .14, duration: .75, ease: 'power2.inOut' }, '-=.15')
