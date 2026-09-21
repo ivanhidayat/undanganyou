@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import './story-reel.css'
 import { supabase } from './lib/supabase'
+import { gsap } from 'gsap'
 import './wish-list.css'
 import './map.css'
 import './music-island.css'
@@ -58,7 +59,11 @@ function App() {
   const [episodesUnlocked, setEpisodesUnlocked] = useState(false)
   const [emojiPop, setEmojiPop] = useState<string | null>(null)
   const [floatingEmojis, setFloatingEmojis] = useState<{ id: number; emoji: string; left: number; top: number; rotate: number }[]>([])
-  const galleryTrackRef = useRef<HTMLDivElement>(null)
+  const galleryBackgroundRef = useRef<HTMLDivElement>(null)
+  const galleryImageRef = useRef<HTMLImageElement>(null)
+  const galleryCaptionRef = useRef<HTMLSpanElement>(null)
+  const galleryAnimatingRef = useRef(false)
+  const galleryPointerStart = useRef({ x: 0, y: 0 })
   const audioRef = useRef<HTMLAudioElement>(null)
   const rawPathGuestName = window.location.pathname.split('/').filter(Boolean)[0] || ''
   const rawQueryGuestName = new URLSearchParams(window.location.search).get('to') || ''
@@ -140,21 +145,25 @@ function App() {
     return () => observer.disconnect()
   }, [tab, galleryUnlocked, portraitVisible, openEpisodes])
 
+
   useEffect(() => {
-    const track = galleryTrackRef.current
-    if (!track) return
-    const onScroll = () => {
-      const cards = Array.from(track.children) as HTMLElement[]
-      const center = track.scrollLeft + track.clientWidth / 2
-      const nearest = cards.reduce((best, card, index) => {
-        const distance = Math.abs(card.offsetLeft + card.offsetWidth / 2 - center)
-        return distance < best.distance ? { index, distance } : best
-      }, { index: activePhoto, distance: Number.POSITIVE_INFINITY })
-      if (nearest.index !== activePhoto) setActivePhoto(nearest.index)
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (tab !== 'story') return
+      if (event.key === 'ArrowRight') nextPhoto()
+      if (event.key === 'ArrowLeft') previousPhoto()
     }
-    track.addEventListener('scroll', onScroll, { passive: true })
-    return () => track.removeEventListener('scroll', onScroll)
-  }, [activePhoto])
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [tab, activePhoto])
+
+  useEffect(() => {
+    carouselPhotos.forEach((photo) => { const preload = new Image(); preload.src = photo.src })
+    const image = galleryImageRef.current
+    if (!image) return
+    gsap.set(image, { scale: 1 })
+    gsap.to(image, { scale: 1.035, duration: 6, ease: 'none', repeat: -1, yoyo: true })
+    return () => { gsap.killTweensOf(image) }
+  }, [])
 
   useEffect(() => {
     const client = supabase
@@ -249,24 +258,30 @@ function App() {
     document.querySelector('.app-shell')?.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const selectPhoto = (index: number) => {
-    const track = galleryTrackRef.current
-    const card = track?.children[index] as HTMLElement | undefined
-    if (!track || !card) return
-    setActivePhoto(index)
-    const start = track.scrollLeft
-    const target = card.offsetLeft - (track.clientWidth - card.offsetWidth) / 2
-    const distance = target - start
-    const duration = 1050
-    const startedAt = performance.now()
-    const ease = (value: number) => value < 0.5 ? 4 * value * value * value : 1 - Math.pow(-2 * value + 2, 3) / 2
-    const animate = (now: number) => {
-      const progress = Math.min((now - startedAt) / duration, 1)
-      track.scrollLeft = start + distance * ease(progress)
-      if (progress < 1) requestAnimationFrame(animate)
-    }
-    requestAnimationFrame(animate)
+  const selectPhoto = (index: number, direction = index > activePhoto ? 1 : -1) => {
+    const next = carouselPhotos[index]
+    const image = galleryImageRef.current
+    const background = galleryBackgroundRef.current
+    const caption = galleryCaptionRef.current
+    if (!next || !image || !background || !caption || galleryAnimatingRef.current || index === activePhoto) return
+    galleryAnimatingRef.current = true
+    const currentImage = image
+    const nextImage = new Image()
+    nextImage.src = next.src
+    const timeline = gsap.timeline({ onComplete: () => { setActivePhoto(index); galleryAnimatingRef.current = false } })
+    timeline.to([currentImage, caption], { x: -60 * direction, opacity: 0, scale: .96, duration: .65, ease: 'power3.inOut' })
+      .set(currentImage, { src: next.src, x: 60 * direction, scale: 1.06 })
+      .to(currentImage, { x: 0, opacity: 1, scale: 1, duration: .9, ease: 'power4.out' }, '-=.28')
+      .to(background, { opacity: .22, duration: .45, ease: 'power2.out' }, 0)
+      .set(background, { backgroundImage: `url(${next.src})` })
+      .to(background, { opacity: .14, duration: .75, ease: 'power2.inOut' }, '-=.15')
+      .set(caption, { textContent: next.label, x: 30 })
+      .to(caption, { x: 0, opacity: 1, duration: .65, ease: 'power3.out' }, '-=.2')
+    gsap.killTweensOf(currentImage)
   }
+
+  const nextPhoto = () => selectPhoto((activePhoto + 1) % carouselPhotos.length, 1)
+  const previousPhoto = () => selectPhoto((activePhoto - 1 + carouselPhotos.length) % carouselPhotos.length, -1)
 
   if (!opened) {
     return (
@@ -307,7 +322,7 @@ function App() {
         <section className="content-section"><h2>Profile Pengantin</h2><div className="profile-grid"><div><div className="avatar fani" /><b>Fani Setiawan, S.Pd</b><span>Putra Bapak Turyanto dan Ibu Naisah</span></div><div><div className="avatar ella" /><b>Ella Afiani, S.M</b><span>Putri Bapak Dirwan dan Ibu Sukarni</span></div></div></section>
       </>}
 
-      {tab === 'story' && <section className={`page-content gallery-page ${galleryUnlocked ? 'is-unlocked' : ''}`}>{!galleryUnlocked && <div className={`flower-gate ${flowerLeaving ? 'leaving' : ''}`}><span className="eyebrow">A LITTLE SURPRISE</span><h1>Geser bunganya</h1><p className="lead">Buka halaman kenangan kami dengan mengangkat bunga ke kanan.</p><div className="flower-stage"><div className="flower-glow" /><div className="flower-rail"><div className="flower-fill" style={{ width: `${flowerProgress}%` }} /></div><div className="flower-handle" style={{ transform: `translateX(${flowerProgress * 2.1}px) scale(${0.88 + flowerProgress / 833})` }} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); const startX = event.clientX; const startProgress = flowerProgress; const move = (moveEvent: PointerEvent) => { const nextProgress = Math.min(100, Math.max(0, startProgress + ((moveEvent.clientX - startX) / 230) * 100)); setFlowerProgress(nextProgress); if (nextProgress >= 92) { setFlowerProgress(100); setFlowerLeaving(true); window.setTimeout(() => setGalleryUnlocked(true), 650) } }; const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up) }; window.addEventListener('pointermove', move); window.addEventListener('pointerup', up) }}><img src="/flower-bouquet.png.png" alt="Buket bunga" /></div></div><p className="glass-hint">Geser bunga ke kanan untuk membuka galeri <b>→</b></p></div>}<div className="gallery-reveal"><span className="eyebrow">OUR MEMORIES</span><h1>Gallery of <em>Love</em></h1><p className="lead">Potongan kecil dari perjalanan Fani dan Ella menuju hari istimewa.</p><div className="gallery-stage" style={{ backgroundImage: `url(${carouselPhotos[activePhoto].src})` }}><div className="gallery-track" ref={galleryTrackRef}>{photos.slice(0, 2).map((photo, index) => <button className={`gallery-card ${index === activePhoto ? 'selected' : ''}`} key={photo.src} onClick={() => selectPhoto(index)}><img src={photo.src} alt={photo.alt} /><span>{photo.label}</span></button>)}</div><button className="gallery-arrow previous" onClick={() => selectPhoto((activePhoto - 1 + carouselPhotos.length) % carouselPhotos.length)} aria-label="Foto sebelumnya">‹</button><button className="gallery-arrow next" onClick={() => selectPhoto((activePhoto + 1) % carouselPhotos.length)} aria-label="Foto berikutnya">›</button><div className="gallery-dots">{carouselPhotos.map((photo, index) => <button key={photo.label} className={index === activePhoto ? 'active' : ''} onClick={() => selectPhoto(index)} aria-label={`Buka ${photo.label}`} />)}</div></div><div className="quote">“Every picture tells our favorite story.”</div><section className={`verse-card ${verseVisible ? 'verse-visible' : ''}`}><span className="eyebrow">A VERSE FOR OUR JOURNEY</span><h2>Ar-Rum · 21</h2><p className="arabic" dir="rtl">وَمِنْ ءَايَٰتِهِۦٓ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَٰجًا لِّتَسْكُنُوٓا۟ إِلَيْهَا وَجَعَلَ بَيْنَكُم مَّوَدَّةً وَرَحْمَةً ۚ إِنَّ فِى ذَٰلِكَ لَءَايَٰتٍ لِّقَوْمٍ يَتَفَكَّرُونَ</p><p className="latin">Wa min āyātihī an khalaqa lakum min anfusikum azwājal litaskunū ilaihā wa ja'ala bainakum mawaddataw wa rahmah, inna fī zālika la'āyātil liqaumiy yatafakkarūn.</p><p className="translation">“Dan di antara tanda-tanda (kebesaran)-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan Dia menjadikan di antaramu rasa kasih dan sayang. Sungguh, pada yang demikian itu benar-benar terdapat tanda-tanda (kebesaran Allah) bagi kaum yang berpikir.”</p></section>
+      {tab === 'story' && <section className={`page-content gallery-page ${galleryUnlocked ? 'is-unlocked' : ''}`}>{!galleryUnlocked && <div className={`flower-gate ${flowerLeaving ? 'leaving' : ''}`}><span className="eyebrow">A LITTLE SURPRISE</span><h1>Geser bunganya</h1><p className="lead">Buka halaman kenangan kami dengan mengangkat bunga ke kanan.</p><div className="flower-stage"><div className="flower-glow" /><div className="flower-rail"><div className="flower-fill" style={{ width: `${flowerProgress}%` }} /></div><div className="flower-handle" style={{ transform: `translateX(${flowerProgress * 2.1}px) scale(${0.88 + flowerProgress / 833})` }} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); const startX = event.clientX; const startProgress = flowerProgress; const move = (moveEvent: PointerEvent) => { const nextProgress = Math.min(100, Math.max(0, startProgress + ((moveEvent.clientX - startX) / 230) * 100)); setFlowerProgress(nextProgress); if (nextProgress >= 92) { setFlowerProgress(100); setFlowerLeaving(true); window.setTimeout(() => setGalleryUnlocked(true), 650) } }; const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up) }; window.addEventListener('pointermove', move); window.addEventListener('pointerup', up) }}><img src="/flower-bouquet.png.png" alt="Buket bunga" /></div></div><p className="glass-hint">Geser bunga ke kanan untuk membuka galeri <b>→</b></p></div>}<div className="gallery-reveal"><span className="eyebrow">OUR MEMORIES</span><h1>Gallery of <em>Love</em></h1><p className="lead">Potongan kecil dari perjalanan Fani dan Ella menuju hari istimewa.</p><div className="gallery-stage" onPointerDown={(event) => { galleryPointerStart.current = { x: event.clientX, y: event.clientY } }} onPointerUp={(event) => { const distance = event.clientX - galleryPointerStart.current.x; if (Math.abs(distance) > 60 && Math.abs(distance) > Math.abs(event.clientY - galleryPointerStart.current.y)) { if (distance < 0) nextPhoto(); else previousPhoto() } }}><div className="gallery-bg" ref={galleryBackgroundRef} style={{ backgroundImage: `url(${carouselPhotos[activePhoto].src})` }} /><div className="gallery-frame"><img ref={galleryImageRef} className="gallery-hero-image" src={carouselPhotos[activePhoto].src} alt={carouselPhotos[activePhoto].alt} /><span ref={galleryCaptionRef} className="gallery-caption">{carouselPhotos[activePhoto].label}</span></div><button className="gallery-arrow previous" onClick={previousPhoto} aria-label="Foto sebelumnya">‹</button><button className="gallery-arrow next" onClick={nextPhoto} aria-label="Foto berikutnya">›</button><div className="gallery-progress" aria-label={`Foto ${activePhoto + 1} dari ${carouselPhotos.length}`}><b>{String(activePhoto + 1).padStart(2, '0')}</b><i /><span>{String(carouselPhotos.length).padStart(2, '0')}</span></div></div><div className="quote">“Every picture tells our favorite story.”</div><section className={`verse-card ${verseVisible ? 'verse-visible' : ''}`}><span className="eyebrow">A VERSE FOR OUR JOURNEY</span><h2>Ar-Rum · 21</h2><p className="arabic" dir="rtl">وَمِنْ ءَايَٰتِهِۦٓ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَٰجًا لِّتَسْكُنُوٓا۟ إِلَيْهَا وَجَعَلَ بَيْنَكُم مَّوَدَّةً وَرَحْمَةً ۚ إِنَّ فِى ذَٰلِكَ لَءَايَٰتٍ لِّقَوْمٍ يَتَفَكَّرُونَ</p><p className="latin">Wa min āyātihī an khalaqa lakum min anfusikum azwājal litaskunū ilaihā wa ja'ala bainakum mawaddataw wa rahmah, inna fī zālika la'āyātil liqaumiy yatafakkarūn.</p><p className="translation">“Dan di antara tanda-tanda (kebesaran)-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan Dia menjadikan di antaramu rasa kasih dan sayang. Sungguh, pada yang demikian itu benar-benar terdapat tanda-tanda (kebesaran Allah) bagi kaum yang berpikir.”</p></section>
         <section className={`story-reel stage-${storyStage} ${episodesUnlocked ? 'episodes-unlocked' : 'episodes-locked'}`}>
           <div className="reel-screen">
             <button className={`reel-title ${storyPressed ? 'is-pressed' : ''}`} onClick={playStory}>▶ {storyPressed ? 'Cerita dimulai' : 'Awal Kisah'}</button>
