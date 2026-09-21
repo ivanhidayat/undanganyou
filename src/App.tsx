@@ -255,7 +255,11 @@ function App() {
 
   const selectTab = (nextTab: Tab) => {
     setTab(nextTab)
-    document.querySelector('.app-shell')?.scrollTo({ top: 0, behavior: 'smooth' })
+    requestAnimationFrame(() => {
+      const shell = document.querySelector('.app-shell')
+      shell?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    })
   }
 
   const selectPhoto = (index: number, direction = index > activePhoto ? 1 : -1) => {
