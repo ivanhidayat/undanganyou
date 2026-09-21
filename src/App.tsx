@@ -84,7 +84,13 @@ function App() {
   }, [verseVisible, tab, galleryUnlocked])
 
   useEffect(() => {
-    if (tab !== 'story' || !galleryUnlocked || storyStage === 0) return
+    if (tab !== 'story' || storyStage < 1 || storyStage >= 2) return
+    const timer = window.setTimeout(() => setStoryStage(2), 1400)
+    return () => window.clearTimeout(timer)
+  }, [tab, storyStage])
+
+  useEffect(() => {
+    if (tab !== 'story' || !galleryUnlocked || storyStage < 2) return
     setEpisodesUnlocked(true)
     const shell = document.querySelector('.app-shell')
     const reel = document.querySelector('.story-reel')
@@ -97,10 +103,10 @@ function App() {
     }, { root: shell, threshold: 0.12 })
     observer.observe(reel)
     return () => observer.disconnect()
-  }, [tab, galleryUnlocked])
+  }, [tab, galleryUnlocked, storyStage])
 
   useEffect(() => {
-    if (tab !== 'story' || !galleryUnlocked) return
+    if (tab !== 'story' || !galleryUnlocked || storyStage < 3) return
     const shell = document.querySelector('.app-shell')
     const items = Array.from(document.querySelectorAll('.reel-item'))
     if (!shell || !items.length) return
