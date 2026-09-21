@@ -274,7 +274,7 @@ function App() {
     gsap.killTweensOf([image, nextImage, background, caption])
     nextImage.src = next.src
     gsap.set(nextImage, { x: 60 * direction, scale: 1.06, opacity: 0 })
-    const timeline = gsap.timeline({ onComplete: () => { setActivePhoto(index); gsap.set(image, { x: 0, scale: 1, opacity: 1 }); gsap.set(nextImage, { opacity: 0 }); galleryAnimatingRef.current = false } })
+    const timeline = gsap.timeline({ onComplete: () => { setActivePhoto(index); requestAnimationFrame(() => { gsap.set(image, { x: 0, scale: 1, opacity: 1 }); gsap.set(nextImage, { x: 60 * direction, scale: 1.06, opacity: 0 }); galleryAnimatingRef.current = false }) } })
     timeline.to([image, caption], { x: -60 * direction, scale: .96, opacity: 0, duration: .7, ease: 'power3.inOut' })
       .fromTo(nextImage, { x: 60 * direction, scale: 1.06, opacity: 0 }, { x: 0, scale: 1, opacity: 1, duration: .9, ease: 'power3.out' }, '-=.35')
       .to(background, { opacity: .22, duration: .45, ease: 'power2.out' }, 0)
