@@ -262,7 +262,7 @@ function App() {
     })
   }
 
-  const selectPhoto = (index: number) => {
+  const selectPhoto = (index: number, direction = index > activePhoto ? 1 : -1) => {
     const next = carouselPhotos[index]
     const image = galleryImageRef.current
     const background = galleryBackgroundRef.current
@@ -270,20 +270,22 @@ function App() {
     if (!next || !image || !background || !caption || galleryAnimatingRef.current || index === activePhoto) return
     galleryAnimatingRef.current = true
     const currentImage = image
-    gsap.killTweensOf([currentImage, background, caption])
+    const nextImage = new Image()
+    nextImage.src = next.src
     const timeline = gsap.timeline({ onComplete: () => { setActivePhoto(index); galleryAnimatingRef.current = false } })
-    timeline.to(currentImage, { opacity: 0, duration: .25, ease: 'power2.out' })
-      .set(currentImage, { src: next.src, x: 0, scale: 1, opacity: 0 })
-      .set(caption, { textContent: next.label, x: 20, opacity: 0 })
-      .to(currentImage, { opacity: 1, duration: .4, ease: 'power2.inOut' })
-      .to(background, { opacity: .08, duration: .25, ease: 'power2.out' }, 0)
+    timeline.to([currentImage, caption], { x: -60 * direction, opacity: 0, scale: .96, duration: .65, ease: 'power3.inOut' })
+      .set(currentImage, { src: next.src, x: 60 * direction, scale: 1.06 })
+      .to(currentImage, { x: 0, opacity: 1, scale: 1, duration: .9, ease: 'power4.out' }, '-=.28')
+      .to(background, { opacity: .22, duration: .45, ease: 'power2.out' }, 0)
       .set(background, { backgroundImage: `url(${next.src})` })
-      .to(background, { opacity: .14, duration: .45, ease: 'power2.inOut' }, '-=.08')
-      .to(caption, { x: 0, opacity: 1, duration: .65, ease: 'power3.out' }, '-=.18')
+      .to(background, { opacity: .14, duration: .75, ease: 'power2.inOut' }, '-=.15')
+      .set(caption, { textContent: next.label, x: 30 })
+      .to(caption, { x: 0, opacity: 1, duration: .65, ease: 'power3.out' }, '-=.2')
+    gsap.killTweensOf(currentImage)
   }
 
-  const nextPhoto = () => selectPhoto((activePhoto + 1) % carouselPhotos.length)
-  const previousPhoto = () => selectPhoto((activePhoto - 1 + carouselPhotos.length) % carouselPhotos.length)
+  const nextPhoto = () => selectPhoto((activePhoto + 1) % carouselPhotos.length, 1)
+  const previousPhoto = () => selectPhoto((activePhoto - 1 + carouselPhotos.length) % carouselPhotos.length, -1)
 
   if (!opened) {
     return (
