@@ -272,14 +272,14 @@ function App() {
     const currentImage = image
     gsap.killTweensOf([currentImage, background, caption])
     const timeline = gsap.timeline({ onComplete: () => { setActivePhoto(index); galleryAnimatingRef.current = false } })
-    timeline.to([currentImage, caption], { x: -42 * direction, opacity: 0, scale: .985, duration: .45, ease: 'power2.inOut' })
-      .set(currentImage, { src: next.src, x: 42 * direction, scale: 1.025, opacity: 0 })
+    timeline.to(currentImage, { x: -60 * direction, opacity: 0, scale: .96, duration: .65, ease: 'power3.inOut' })
+      .set(currentImage, { src: next.src, x: 60 * direction, scale: 1.06, opacity: 0 })
       .set(caption, { textContent: next.label, x: 20, opacity: 0 })
-      .to(currentImage, { x: 0, opacity: 1, scale: 1, duration: .9, ease: 'power2.out' }, '-=.08')
-      .to(background, { opacity: .08, duration: .5, ease: 'power2.inOut' }, 0)
+      .to(currentImage, { x: 0, opacity: 1, scale: 1, duration: .9, ease: 'power4.out' }, '-=.28')
+      .to(background, { opacity: .22, duration: .45, ease: 'power2.out' }, 0)
       .set(background, { backgroundImage: `url(${next.src})` })
-      .to(background, { opacity: .14, duration: 1, ease: 'power2.out' }, '-=.1')
-      .to(caption, { x: 0, opacity: 1, duration: .65, ease: 'power2.out' }, '-=.48')
+      .to(background, { opacity: .14, duration: .75, ease: 'power2.inOut' }, '-=.15')
+      .to(caption, { x: 0, opacity: 1, duration: .65, ease: 'power3.out' }, '-=.2')
   }
 
   const nextPhoto = () => selectPhoto((activePhoto + 1) % carouselPhotos.length, 1)
